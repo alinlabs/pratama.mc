@@ -80,10 +80,29 @@ export default function KlienContainer({
   const isExternalGDriveForm =
     tab === "gdrive" && new URLSearchParams(location.search).has("new");
 
-  const [event, setEvent] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [event, setEvent] = useState<any>(() => {
+    try {
+      const cached = sessionStorage.getItem(`cached_event_ui_${username}`);
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(() => {
+    try {
+      return !sessionStorage.getItem(`cached_event_ui_${username}`);
+    } catch {
+      return true;
+    }
+  });
   const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      return !!sessionStorage.getItem(`cached_event_ui_${username}`);
+    } catch {
+      return false;
+    }
+  });
   const [expectedClientId, setExpectedClientId] = useState<string>("");
 
   const validTabs = [
@@ -159,9 +178,9 @@ export default function KlienContainer({
     }
   }, [isAuthenticated]);
 
-  const fetchBasicEvent = async () => {
-    setLoading(true);
-    setError(null);
+  const fetchBasicEvent = async (isBackground = false) => {
+    if (!isBackground) setLoading(true);
+    if (!isBackground) setError(null);
     try {
       if (username === "klien") {
         const lastClientUsername = localStorage.getItem("last_client_username");
@@ -175,7 +194,7 @@ export default function KlienContainer({
           }
         }
         setIsAuthenticated(false);
-        setLoading(false);
+        if (!isBackground) setLoading(false);
         return;
       }
 
@@ -188,10 +207,10 @@ export default function KlienContainer({
       if (!foundEvent) {
         if (username === "klien") {
           setIsAuthenticated(false);
-          setLoading(false);
+          if (!isBackground) setLoading(false);
         } else {
-          setError("not_found");
-          setLoading(false);
+          if (!isBackground) setError("not_found");
+          if (!isBackground) setLoading(false);
         }
       } else {
         localStorage.setItem("last_client_username", foundEvent.username);
@@ -201,19 +220,19 @@ export default function KlienContainer({
           sessionStorage.setItem(authKey, foundEvent.id_klien);
         }
         setExpectedClientId(foundEvent.id_klien);
-        setEvent(foundEvent);
+        setEvent((prev: any) => ({ ...prev, ...foundEvent }));
         setIsAuthenticated(true);
-        fetchFullEvent(foundEvent.id_klien, foundEvent);
+        fetchFullEvent(foundEvent.id_klien, foundEvent, isBackground);
       }
     } catch (err) {
       console.error("Error fetching basic event:", err);
-      setError("Gagal memuat data. Periksa koneksi internet Anda.");
-      setLoading(false);
+      if (!isBackground) setError("Gagal memuat data. Periksa koneksi internet Anda.");
+      if (!isBackground) setLoading(false);
     }
   };
 
-  const fetchFullEvent = async (clientId: string, baseEvent: any = {}) => {
-    setLoading(true);
+  const fetchFullEvent = async (clientId: string, baseEvent: any = {}, isBackground = false) => {
+    if (!isBackground) setLoading(true);
     try {
       const [keluargaList, acaraList, vendorList, catatanList, pengantinList] =
         await Promise.all([
@@ -371,20 +390,21 @@ export default function KlienContainer({
       }));
     } catch (err) {
       console.error("Error fetching full event:", err);
-      setError("Gagal memuat detail data.");
+      if (!isBackground) setError("Gagal memuat detail data.");
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBasicEvent();
+    const hasCache = !!sessionStorage.getItem(`cached_event_ui_${username}`);
+    fetchBasicEvent(hasCache);
 
     // Pastikan refresh data saat tab browser kembali aktif
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         // Cache cleared by App.tsx, just refetch
-        fetchBasicEvent();
+        fetchBasicEvent(true);
       }
     };
 
@@ -461,6 +481,12 @@ export default function KlienContainer({
       }
     };
   }, [username]);
+
+  useEffect(() => {
+    if (event && username) {
+      sessionStorage.setItem(`cached_event_ui_${username}`, JSON.stringify(event));
+    }
+  }, [event, username]);
 
   useEffect(() => {
     if (!username || username === "klien" || !event) return;
