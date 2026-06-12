@@ -600,21 +600,40 @@ export default function SusunanAcaraView({
                         {musicArray.map((musicItem, musicIdx) => {
                           const trackId = `${selectedItem.id || selectedItem.kegiatan || selectedItem.judul}-${musicIdx}`;
 
+                          const isInternalMusic = String(musicItem).startsWith('msc-');
+                          const baseMusicId = isInternalMusic ? String(musicItem).split('-').slice(0, 2).join('-') : musicItem;
+                          
                           const matchedSong = allMusik.find((m) => {
                             const songLink =
                               m.versi?.[0]?.tautan || m.tautan || m.link;
+                            const mBaseId = String(m.id).startsWith('msc-') ? String(m.id).split('-').slice(0, 2).join('-') : m.id;
+
                             return (
                               String(m.id) === String(musicItem) ||
+                              (isInternalMusic && mBaseId === baseMusicId) ||
                               String(m.id).startsWith(String(musicItem)) ||
                               String(songLink) === String(musicItem)
                             );
                           });
+                          
                           const isOurAsset = !!matchedSong;
-                          const linkMusik = isOurAsset
-                            ? matchedSong.versi?.[0]?.tautan ||
-                              matchedSong.tautan ||
-                              matchedSong.link
-                            : musicItem;
+                          
+                          let linkMusik = musicItem;
+                          if (isOurAsset) {
+                             const variantMatches = String(musicItem).split('-');
+                             const requestedVariant = variantMatches.length > 2 ? variantMatches[2].toLowerCase() : '';
+                             
+                             let specificTautan = null;
+                             if (requestedVariant && matchedSong?.versi) {
+                               const vMatch = matchedSong.versi.find((v: any) => v.kategori?.toLowerCase() === requestedVariant);
+                               if (vMatch && vMatch.tautan) {
+                                  specificTautan = vMatch.tautan;
+                               }
+                             }
+                             
+                             linkMusik = specificTautan || matchedSong.versi?.[0]?.tautan || matchedSong.tautan || matchedSong.link;
+                          }
+                          
                           const songName = matchedSong
                             ? `${matchedSong.artis} - ${matchedSong.judul}`
                             : musicItem;
