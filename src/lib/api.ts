@@ -16,22 +16,22 @@ export function synchronizeAcaraWithDefaults(acaraList: any[]): any[] {
     if (activity === "sungkeman") {
       return {
         ...item,
-        segmen: "Adat",
-        musik: ["msc-002-saxophone"]
+        segmen: item.segmen || "Adat",
+        musik: item.musik !== undefined ? item.musik : ["msc-002-saxophone"]
       };
     }
     if (activity === "penyandingan pengantin") {
       return {
         ...item,
-        segmen: "Akad",
-        musik: ["msc-004-piano"]
+        segmen: item.segmen || "Akad",
+        musik: item.musik !== undefined ? item.musik : ["msc-004-piano"]
       };
     }
     if (activity === "doa pengantin" || activity === "doa diatas ubun ubun" || activity === "doa di atas ubun-ubun") {
       return {
         ...item,
-        segmen: "Akad",
-        musik: ["msc-002-saxophone"]
+        segmen: item.segmen || "Akad",
+        musik: item.musik !== undefined ? item.musik : ["msc-002-saxophone"]
       };
     }
     if (
@@ -43,36 +43,36 @@ export function synchronizeAcaraWithDefaults(acaraList: any[]): any[] {
     ) {
       return {
         ...item,
-        segmen: "Adat",
-        musik: ["msc-012-vokal"]
+        segmen: item.segmen || "Adat",
+        musik: item.musik !== undefined ? item.musik : ["msc-012-vokal"]
       };
     }
     if (activity === "saweran") {
       return {
         ...item,
-        segmen: "Adat",
-        musik: ["msc-010-vokal", "msc-011-vokal"]
+        segmen: item.segmen || "Adat",
+        musik: item.musik !== undefined ? item.musik : ["msc-010-vokal", "msc-011-vokal"]
       };
     }
     if (activity === "sesi foto keluarga") {
       return {
         ...item,
-        segmen: "Istirahat",
-        musik: []
+        segmen: item.segmen || "Istirahat",
+        musik: item.musik !== undefined ? item.musik : []
       };
     }
     if (activity === "flashmob" || activity === "flashmob remix") {
       return {
         ...item,
         segmen: item.segmen || "Mingle",
-        musik: ["msc-023"]
+        musik: item.musik !== undefined ? item.musik : ["msc-023"]
       };
     }
     if (activity === "kirab pengantin" || activity === "kirab") {
       return {
         ...item,
-        segmen: "Resepsi",
-        musik: [
+        segmen: item.segmen || "Resepsi",
+        musik: item.musik !== undefined ? item.musik : [
           "https://youtu.be/GFBMg92iTpE?si=k0ziucwtHIozsa-v",
           "https://youtu.be/OaxIVQLit2w?si=4fAwML5dwJi1mQMj"
         ]
