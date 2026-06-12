@@ -222,15 +222,30 @@ export async function fetchWithFallback<T>(
     moduleName || endpoint.split("?")[0].split("/").pop() || "Data";
   const cacheKey = endpoint;
 
+  const getFetchUrl = () => {
+    if (ttl <= 0) {
+      return `${CF_WORKER_URL}${endpoint}${endpoint.includes('?') ? '&' : '?'}_t=${Date.now()}`;
+    }
+    return `${CF_WORKER_URL}${endpoint}`;
+  };
+
+  const getFetchOpts = (): RequestInit => {
+    const opts: RequestInit = {
+      method: "GET",
+      headers: getRequestHeaders(),
+    };
+    if (ttl <= 0) {
+      opts.cache = "no-store";
+    }
+    return opts;
+  };
+
   const cachedData = getFromCache<T>(cacheKey, ttl);
 
   // Background fetch logic (Stale-While-Revalidate)
   const bgFetch = async () => {
     try {
-      const response = await fetch(`${CF_WORKER_URL}${endpoint}`, {
-        method: "GET",
-        headers: getRequestHeaders(),
-      });
+      const response = await fetch(getFetchUrl(), getFetchOpts());
       if (response.ok) {
         const data = await response.json();
         let isDataEmpty = false;
@@ -258,10 +273,7 @@ export async function fetchWithFallback<T>(
   }
 
   try {
-    const response = await fetch(`${CF_WORKER_URL}${endpoint}`, {
-      method: "GET",
-      headers: getRequestHeaders(),
-    });
+    const response = await fetch(getFetchUrl(), getFetchOpts());
 
     if (!response.ok) {
       throw new Error(
